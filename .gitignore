@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------------------
+# DeltaPace .gitignore
+# ---------------------------------------------------------------------------
+
+# FastF1 local API cache
+data/
+*.ff1pkl
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Python bytecode / build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter / notebook checkpoints
+.ipynb_checkpoints/
+
+# Generated analytics output
+reports/
+*.png
+*.jpg
+
+# IDE / OS cruft
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,24 @@
+# ---------------------------------------------------------------------------
+# DeltaPace :: Python dependencies
+# Pinned to major versions known to be mutually compatible (Python 3.10+).
+# Install with:  pip install -r requirements.txt
+# ---------------------------------------------------------------------------
+
+# --- Data Ingestion -------------------------------------------------------
+fastf1>=3.3.0            # Official F1 timing/telemetry API wrapper (+ caching)
+pandas>=2.1.0            # Tabular data manipulation
+numpy>=1.26.0            # Numerical backbone for pandas/sklearn
+
+# --- Machine Learning -----------------------------------------------------
+scikit-learn>=1.4.0      # Regression models for tire degradation
+
+# --- AI Orchestration -----------------------------------------------------
+langgraph>=0.2.0         # Stateful multi-agent graph runtime
+langchain>=0.3.0         # Core LLM abstractions / message types
+langchain-openai>=0.2.0  # OpenAI chat model binding for LangChain
+
+# --- Cloud LLM ------------------------------------------------------------
+openai>=1.30.0           # OpenAI SDK (used by the Writer Agent)
+
+# --- Configuration --------------------------------------------------------
+python-dotenv>=1.0.0     # Loads .env into environment variables
