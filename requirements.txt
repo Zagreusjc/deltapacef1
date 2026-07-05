@@ -12,13 +12,8 @@ numpy>=1.26.0            # Numerical backbone for pandas/sklearn
 # --- Machine Learning -----------------------------------------------------
 scikit-learn>=1.4.0      # Regression models for tire degradation
 
-# --- AI Orchestration -----------------------------------------------------
-langgraph>=0.2.0         # Stateful multi-agent graph runtime
-langchain>=0.3.0         # Core LLM abstractions / message types
-langchain-openai>=0.2.0  # OpenAI chat model binding for LangChain
-
-# --- Cloud LLM ------------------------------------------------------------
-openai>=1.30.0           # OpenAI SDK (used by the Writer Agent)
+# --- AWS Cloud ------------------------------------------------------------
+boto3>=1.34.0            # S3 durable storage + Bedrock runtime (Converse API)
 
 # --- Configuration --------------------------------------------------------
 python-dotenv>=1.0.0     # Loads .env into environment variables
