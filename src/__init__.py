@@ -1,3 +1,3 @@
-"""DeltaPace :: Formula 1 analytics platform (source package)."""
+"""DeltaPace :: Formula 1 batch analytics pipeline (source package)."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

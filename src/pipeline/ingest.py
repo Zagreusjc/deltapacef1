@@ -16,7 +16,7 @@ Design notes
   FastF1 understands works without code changes, because we simply forward the
   :class:`~src.config.RaceContext` values to ``fastf1.get_session``.
 * Network/parse failures are wrapped in a domain-specific
-  :class:`SessionLoadError` so callers (and the LangGraph DataAgent) can react
+  :class:`SessionLoadError` so callers (the pipeline orchestrator) can react
   to a single, predictable exception type.
 """
 
@@ -46,8 +46,11 @@ class SessionLoader:
         The :class:`~src.config.RaceContext` describing which session to load.
         Defaults to the project-wide :data:`~src.config.DEFAULT_RACE`.
     cache_dir:
-        Directory FastF1 uses to persist API responses on disk. Reusing this
-        across runs turns slow network calls into near-instant disk reads.
+        **Local** directory FastF1 uses to persist API responses on disk.
+        FastF1's ``Cache.enable_cache()`` requires a filesystem path — S3
+        cannot substitute for this. Reusing the same directory across runs
+        turns slow network calls into near-instant disk reads. Optional upload
+        of cache blobs to S3 is handled by :mod:`src.storage.s3`, not here.
 
     Typical usage
     -------------
@@ -65,7 +68,8 @@ class SessionLoader:
         self.race: RaceContext = race or DEFAULT_RACE
         self.cache_dir: Path = Path(cache_dir)
 
-        # Enable the on-disk cache exactly once; this is the key to fast reruns.
+        # FastF1 cache MUST remain on local disk (see module docstring).
+        # S3 sync for team cache reuse is handled by src.storage.s3.
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         fastf1.Cache.enable_cache(str(self.cache_dir))
 
