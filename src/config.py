@@ -12,8 +12,9 @@ runs. It groups four kinds of settings:
    for uploading processed artifacts and reports.
 3. **Race parameters** (`RaceContext`) -- the dynamic year / event / session
    triple that every downstream component (ingest, features, ML, report) reads.
-4. **Domain & LLM** -- ``F1Physics`` constants and ``BedrockSettings`` for the
-   optional narrative report step (Amazon Bedrock Converse API).
+4. **Domain & LLM** -- ``F1Physics`` constants, ``MLSettings`` for regression
+   thresholds, and ``BedrockSettings`` for the optional narrative report step
+   (Amazon Bedrock Converse API).
 
 Everything is expressed with ``dataclasses`` so components can be *constructed*
 with explicit parameters (great for testing) while still exposing sensible
@@ -275,10 +276,36 @@ class F1Physics:
 
 
 # ---------------------------------------------------------------------------
+# Machine-learning settings (tyre degradation regression)
+# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class MLSettings:
+    """Thresholds and defaults for the scikit-learn degradation model.
+
+    These guard against fitting noisy regressions on stints that are too short
+    (e.g. a single out-lap before a pit stop) or on laps flagged as inaccurate
+    by FastF1.
+    """
+
+    # Minimum laps on a stint before we attempt a per-(driver, compound) fit.
+    min_stint_laps: int = 5
+
+    # Minimum total samples across all stints for a driver+compound combination.
+    min_samples_per_group: int = 8
+
+    # Exclude laps where FastF1 marks IsAccurate == False (when column exists).
+    require_accurate_laps: bool = True
+
+    # Future Phase: pit-stop loss assumption (seconds) for crossover modelling.
+    pit_stop_loss_seconds: float = 22.0
+
+
+# ---------------------------------------------------------------------------
 # Convenient module-level singletons
 # ---------------------------------------------------------------------------
 # Most callers just want the defaults; advanced callers instantiate their own.
 AWS_SETTINGS = AWSSettings()
 BEDROCK_SETTINGS = BedrockSettings()
 PHYSICS = F1Physics()
+ML_SETTINGS = MLSettings()
 DEFAULT_RACE = RaceContext()
