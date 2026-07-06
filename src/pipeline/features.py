@@ -26,6 +26,10 @@ dominated by tyre wear. This class computes two such corrections:
 
 The headline output column is ``FuelCorrectedLapTime``: the lap time with the
 fuel penalty removed, leaving tyre age as the dominant explanatory variable.
+
+Downstream, :class:`~src.pipeline.identity.IdentityEnricher` attaches driver
+full names and team colors, and :class:`~src.models.regression.TireDegradationModel`
+fits degradation rates per driver and compound.
 """
 
 from __future__ import annotations
