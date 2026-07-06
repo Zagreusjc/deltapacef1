@@ -58,6 +58,8 @@ class S3ArtifactStore:
     ARTIFACT_LAPS = "laps.csv"
     ARTIFACT_WEATHER = "weather.csv"
     ARTIFACT_FEATURES = "features.csv"
+    ARTIFACT_DEGRADATION = "degradation.csv"
+    ARTIFACT_TEAM_SUMMARY = "team_summary.csv"
     ARTIFACT_REPORT = "report.md"
 
     def __init__(
@@ -181,6 +183,8 @@ class S3ArtifactStore:
         laps: pd.DataFrame | None = None,
         weather: pd.DataFrame | None = None,
         features: pd.DataFrame | None = None,
+        degradation: pd.DataFrame | None = None,
+        team_summary: pd.DataFrame | None = None,
     ) -> dict[str, bool]:
         """Upload processed session DataFrames under the standard key layout."""
         prefix = self.settings.processed_prefix(race)
@@ -197,6 +201,14 @@ class S3ArtifactStore:
         if features is not None:
             results["features"] = self.upload_dataframe(
                 features, f"{prefix}/{self.ARTIFACT_FEATURES}"
+            )
+        if degradation is not None:
+            results["degradation"] = self.upload_dataframe(
+                degradation, f"{prefix}/{self.ARTIFACT_DEGRADATION}"
+            )
+        if team_summary is not None:
+            results["team_summary"] = self.upload_dataframe(
+                team_summary, f"{prefix}/{self.ARTIFACT_TEAM_SUMMARY}"
             )
         return results
 
