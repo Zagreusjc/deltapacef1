@@ -18,6 +18,9 @@ Design notes
 * Network/parse failures are wrapped in a domain-specific
   :class:`SessionLoadError` so callers (the pipeline orchestrator) can react
   to a single, predictable exception type.
+* **Identity fields** (full names, team colors, grid/finish) live in
+  :meth:`results` and are joined onto laps by
+  :class:`~src.pipeline.identity.IdentityEnricher` — ingest keeps laps lean.
 """
 
 from __future__ import annotations
@@ -77,6 +80,7 @@ class SessionLoader:
         self._session: fastf1.core.Session | None = None
         self._laps: pd.DataFrame | None = None
         self._weather: pd.DataFrame | None = None
+        self._results: pd.DataFrame | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -122,6 +126,7 @@ class SessionLoader:
         self._session = session
         self._laps = self._clean_laps(session.laps)
         self._weather = self._extract_weather(session)
+        self._results = self._clean_results(session.results)
         logger.info(
             "Loaded %d laps and %d weather samples for %s",
             len(self._laps),
@@ -150,9 +155,14 @@ class SessionLoader:
 
     @property
     def results(self) -> pd.DataFrame:
-        """Classified session results (grid, finishing position, points)."""
+        """Classified session results with driver/team identity columns.
+
+        Includes FullName, DriverNumber, TeamName, TeamColor, GridPosition,
+        Position, and Points when FastF1 provides them. Join onto laps via
+        :class:`~src.pipeline.identity.IdentityEnricher`.
+        """
         self._require_loaded()
-        return self._session.results  # type: ignore[union-attr]
+        return self._results  # type: ignore[return-value]
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -201,6 +211,52 @@ class SessionLoader:
         ]
         existing = [c for c in keep if c in laps.columns]
         return laps[existing].reset_index(drop=True)
+
+    @staticmethod
+    def _clean_results(raw_results: pd.DataFrame) -> pd.DataFrame:
+        """Normalise the FastF1 results frame for identity joins.
+
+        Laps use the three-letter ``Driver`` code; results use ``Abbreviation``.
+        We standardise names here so :mod:`src.pipeline.identity` can merge
+        without guessing column aliases across FastF1 versions.
+        """
+        if raw_results is None or raw_results.empty:
+            return pd.DataFrame(
+                columns=[
+                    "Driver",
+                    "FullName",
+                    "DriverNumber",
+                    "TeamName",
+                    "TeamColor",
+                    "GridPosition",
+                    "Position",
+                    "Points",
+                ]
+            )
+
+        results = raw_results.copy()
+
+        # Harmonise driver code column -> ``Driver`` (matches laps frame).
+        if "Driver" not in results.columns and "Abbreviation" in results.columns:
+            results["Driver"] = results["Abbreviation"]
+
+        # Harmonise team name when only ``Team`` is present.
+        if "TeamName" not in results.columns and "Team" in results.columns:
+            results["TeamName"] = results["Team"]
+
+        keep = [
+            "Driver",
+            "FullName",
+            "DriverNumber",
+            "TeamName",
+            "TeamColor",
+            "GridPosition",
+            "Position",
+            "Points",
+            "Status",
+        ]
+        existing = [c for c in keep if c in results.columns]
+        return results[existing].reset_index(drop=True)
 
     @staticmethod
     def _extract_weather(session: fastf1.core.Session) -> pd.DataFrame:
