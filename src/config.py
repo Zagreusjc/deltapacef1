@@ -173,7 +173,7 @@ class AWSSettings:
 
 
 # ---------------------------------------------------------------------------
-# Amazon Bedrock settings (replaces OpenAI / Lang stack)
+# Amazon Bedrock settings (narrative report step)
 # ---------------------------------------------------------------------------
 @dataclass(frozen=True)
 class BedrockSettings:
