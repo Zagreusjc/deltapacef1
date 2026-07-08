@@ -231,6 +231,41 @@ class S3ArtifactStore:
             self._handle_error(f"upload report {key}", exc)
             return False
 
+    def upload_local_file(
+        self,
+        local_path: Path,
+        key: str,
+        *,
+        content_type: str = "application/octet-stream",
+    ) -> bool:
+        """Upload a file from disk (e.g. chart PNG) to ``s3://{bucket}/{key}``."""
+        if not self.enabled or not self.settings.s3_bucket:
+            return False
+
+        path = Path(local_path)
+        if not path.is_file():
+            logger.warning("Cannot upload missing file: %s", path)
+            return False
+
+        try:
+            self._get_client().upload_file(
+                str(path),
+                self.settings.s3_bucket,
+                key,
+                ExtraArgs={"ContentType": content_type},
+            )
+            logger.info("Uploaded s3://%s/%s", self.settings.s3_bucket, key)
+            return True
+        except Exception as exc:  # noqa: BLE001
+            self._handle_error(f"upload file {key}", exc)
+            return False
+
+    def s3_uri(self, key: str) -> str:
+        """Return a full ``s3://`` URI when bucket is configured."""
+        if not self.settings.s3_bucket:
+            return ""
+        return f"s3://{self.settings.s3_bucket}/{key.lstrip('/')}"
+
     # ------------------------------------------------------------------
     # Optional FastF1 cache sync (best-effort)
     # ------------------------------------------------------------------
