@@ -15,5 +15,8 @@ scikit-learn>=1.4.0      # Regression models for tire degradation
 # --- AWS Cloud ------------------------------------------------------------
 boto3>=1.34.0            # S3 durable storage + Bedrock runtime (Converse API)
 
+# --- Visualization --------------------------------------------------------
+matplotlib>=3.8.0        # Race charts (degradation bars, tyre curves, team pace)
+
 # --- Configuration --------------------------------------------------------
 python-dotenv>=1.0.0     # Loads .env into environment variables
