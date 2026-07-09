@@ -34,10 +34,10 @@ def test_generate_all_charts_with_minimal_data(tmp_path: Path):
     )
     enriched = pd.DataFrame(
         {
-            "Driver": ["VER"],
-            "FullName": ["Max Verstappen"],
-            "TeamColor": ["3671C6"],
-            "Compound": ["MEDIUM"],
+            "Driver": ["VER", "VER", "VER"],
+            "FullName": ["Max Verstappen"] * 3,
+            "TeamColor": ["3671C6"] * 3,
+            "Compound": ["MEDIUM"] * 3,
             "TyreAge": [1, 2, 3],
             "FuelCorrectedLapTime": [89.0, 89.1, 89.2],
         }
