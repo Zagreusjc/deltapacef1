@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
 
 from src.pipeline.features import FeatureEngineer
@@ -41,3 +42,43 @@ def test_tyre_age_from_tyre_life():
     )
     out = FeatureEngineer().transform(laps)
     assert out["TyreAge"].iloc[0] == 7
+
+
+def test_merge_weather_tolerates_nat_time_on_laps():
+    """Laps with NaT Time must not crash merge_asof; they keep NaN weather metrics."""
+    laps = pd.DataFrame(
+        {
+            "Driver": ["VER"] * 3,
+            "LapNumber": [1, 2, 3],
+            "LapTimeSeconds": [90.0, 90.5, 91.0],
+            "Stint": [1] * 3,
+            "Compound": ["MEDIUM"] * 3,
+            "TyreLife": [1, 2, 3],
+            "Time": [
+                pd.Timedelta(seconds=100),
+                pd.NaT,
+                pd.Timedelta(seconds=300),
+            ],
+        }
+    )
+    weather = pd.DataFrame(
+        {
+            "Time": [
+                pd.Timedelta(seconds=50),
+                pd.NaT,
+                pd.Timedelta(seconds=250),
+            ],
+            "AirTemp": [25.0, np.nan, 27.0],
+            "TrackTemp": [30.0, np.nan, 34.0],
+        }
+    )
+    out = FeatureEngineer().transform(laps, weather=weather)
+
+    assert len(out) == 3
+    assert out["LapNumber"].tolist() == [1, 2, 3]
+    # Middle lap had no timestamp — weather metrics must be NaN.
+    assert pd.isna(out.loc[out["LapNumber"] == 2, "TrackTemp"].iloc[0])
+    assert pd.isna(out.loc[out["LapNumber"] == 2, "AirTemp"].iloc[0])
+    # Other laps received a weather join.
+    assert pd.notna(out.loc[out["LapNumber"] == 1, "TrackTemp"].iloc[0])
+    assert pd.notna(out.loc[out["LapNumber"] == 3, "TrackTemp"].iloc[0])

@@ -195,22 +195,50 @@ class FeatureEngineer:
                 df[col] = np.nan
             return df
 
-        # ``merge_asof`` requires both keys sorted ascending on the join column.
-        left = df.sort_values("Time")
-        right = weather.sort_values("Time")
+        # ``merge_asof`` cannot join on null keys — retirements and deleted laps
+        # often carry NaT in ``Time``. Split those rows out, merge the rest, then
+        # stitch everything back so no laps are dropped from the output.
+        working = df.copy()
+        working["_row_id"] = np.arange(len(working))
 
-        merged = pd.merge_asof(
-            left,
+        left_has_time = working["Time"].notna()
+        left_invalid = working[~left_has_time]
+        if len(left_invalid):
+            logger.warning(
+                "%d lap(s) excluded from weather join due to missing Time.",
+                len(left_invalid),
+            )
+
+        right = weather[weather["Time"].notna()].sort_values("Time")
+        left_valid = working[left_has_time].sort_values("Time")
+
+        if left_valid.empty or right.empty:
+            out = working.drop(columns=["_row_id"])
+            for col in metric_cols:
+                out[col] = np.nan
+            sort_key = "LapNumber" if "LapNumber" in out.columns else "Time"
+            return out.sort_values(sort_key).reset_index(drop=True)
+
+        merged_valid = pd.merge_asof(
+            left_valid,
             right[["Time", "AirTemp", "TrackTemp"]],
             on="Time",
             direction="nearest",
         )
 
-        baseline = merged["TrackTemp"].iloc[0]
-        merged["TrackTempDelta"] = merged["TrackTemp"] - baseline
-        merged["TrackTempRoll5"] = (
-            merged["TrackTemp"].rolling(window=5, min_periods=1).mean()
+        baseline = merged_valid["TrackTemp"].iloc[0]
+        merged_valid["TrackTempDelta"] = merged_valid["TrackTemp"] - baseline
+        merged_valid["TrackTempRoll5"] = (
+            merged_valid["TrackTemp"].rolling(window=5, min_periods=1).mean()
         )
+
+        # Laps without a timestamp keep the schema but get NaN weather metrics.
+        left_invalid = left_invalid.copy()
+        for col in metric_cols:
+            left_invalid[col] = np.nan
+
+        merged = pd.concat([merged_valid, left_invalid], ignore_index=True)
+        merged = merged.drop(columns=["_row_id"])
 
         # Restore original lap ordering (LapNumber) for readability downstream.
         sort_key = "LapNumber" if "LapNumber" in merged.columns else "Time"
